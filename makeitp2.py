@@ -1,7 +1,7 @@
 import math
 from pathlib import Path
 import re
-from functools import reduce
+import os
 
 def get_dis(pos1, pos2) :
     x1,y1,z1=[float(pos1[i]) for i in range(3)]
@@ -24,10 +24,32 @@ class gro_atoms(object):
 #print(get_dis(test1.pos,test2.pos))
 #ans=1.00169855745129
 
+topol=Path("topol.top")
+if topol.is_file():
+    print("Find the topol.top of system")
+else:
+    print("No topol.top found\nPlease check your input")
+    exit()
 topol_itp=[item for item in map(str,list(Path('.').glob('topol*itp')))]
-posre_itp=[item for item in map(str,list(Path('.').glob('posre*itp')))]
+posre_itp=[item for item in map(str,list(Path('.').glob('posre_Protein*itp')))]
+if len(topol_itp) < 1 or len(posre_itp) < 1:
+    print("Sorry, protein's topol files don't exist in local dir.\nMaybe all file is in the topol.top, which cannot be handled.\nPlease check your input files.")
+    exit()
+elif len(topol_itp) != len(posre_itp):
+    print(f"{len(topol_itp)} chain while {len(posre_itp)} porse\n There is something wrong")
+    exit()
+else:
+    print(f"{len(topol_itp)} pair top file of protein in current dir")
 lig_name=[item for item in map(str,list(Path('.').glob('*prm')))]
 lig_name=lig_name[0].split(".")[0].split("/")[-1].upper()
+lig_name_lower=lig_name[0].split(".")[0].split("/")[-1]
+lig_top=[item for item in map(str,list(Path('/home/chengyj/git_handbook/makeitp/test/5q0n_9L4c').glob(f'{lig_name_lower}*')))]
+if len(lig_top) != 5:
+    print("This script needs 5 ligand topol file,\n which are .prm, .itp, .top, _ini.pdb and .gro\n There is not enough file in current dir")
+    exit()
+else:
+    print(f"{len(lig_top)} of ligand topol files in current dir")
+
 
 topol_order=[]
 with open ('topol.top') as topol_all_file:
@@ -85,9 +107,10 @@ for index_chain in range(len(split_chain)-1):
                 prose_itp.write(f"{str(atom.index-split_chain[index_chain][0]).rjust(5,' ')}    1       1000       1000       1000\n")
                 count+=1
 if count == len(restain_atoms):
-    print("all itp files have been written")
+    print("All itp files have been written")
 else:
-    print("there is something wrong")
+    print("There is something wrong, some restain atoms are missing")
 
-
-
+for chain_topol in topol_order:
+    os.system(f"sed -i \"s/posre_Protein_chain/posre_chain/\" {chain_topol}")
+print("The topol of every chain is modified.\nNow everything has finished")
